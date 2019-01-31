@@ -1,0 +1,103 @@
+h4 {
+   color: white;
+}
+
+a {
+    color: #5FAD1A;
+}
+
+#searchField {
+   background: #EEF3EE;
+}
+
+#searchField:focus {
+   border-color: #5FAD1A;
+}
+
+.panel-default {
+   box-shadow: none;
+   border-bottom: 0;
+}
+
+.panel-default>.panel-heading {
+   background: #5FAD1A;
+   box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.ui-autocomplete {
+    position: absolute;
+    z-index: 1000;
+    cursor: default;
+    padding: 0;
+    margin-top: 2px;
+    list-style: none;
+    background-color: #EEF3EE;
+    border: 1px solid #ccc;
+    -webkit-border-radius: 5px;
+       -moz-border-radius: 5px;
+            border-radius: 5px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+       -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.ui-autocomplete > li {
+  padding: 3px 20px;
+}
+
+.ui-autocomplete > li.ui-state-focus {
+  background-color: #DDD;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: searchfield-cancel-button;
+    color: red;
+}
+
+tr {
+   height: 3.5em;
+}
+
+#searchElement {
+   width: 30%;
+   padding-bottom: 2em;
+}
+
+#results {
+   width: 60%;
+}
+
+#columns {
+   color: silver;
+   font-size: 80%;
+   height: 4em;
+}
+
+#red {
+   color: red;
+}
+
+#faster {
+   color: green;
+}
+
+#smaller {
+   font-size: 80%;
+}
+
+#cancelled {
+   color: silver;
+}
+
+@media screen and (max-width: 800px) {
+   #searchElement {
+      width: 60%;
+   }
+   #results {
+      width: 90%;
+   }
+}

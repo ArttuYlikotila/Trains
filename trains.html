@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <title>Junien aikatauluja</title>
+   
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+   <link rel="stylesheet" type="text/css" href="css/style.css"/>
+</head>
+
+<body id="page">
+   <div class="panel panel-default">
+      <div class="panel-heading">
+         <h4>Aseman junatiedot</h4>
+      </div>
+
+      <div class="panel-body">
+         <!-- Element for the search -->
+         <form>
+            <div id="searchElement" class="form-group">
+               <label for="searchField">Hae aseman nimellä</label>
+               <input type="search" class="form-control autocomplete" id="searchField">
+            </div>
+         </form>
+         <!-- Element where the results of the search are shown -->
+         <div id="results">
+            <ul class="nav nav-tabs">
+               <li class="active"><a data-toggle="tab" href="#incomingTrainsTab">Saapuvat</a></li>
+               <li><a id="loadDeparting" data-toggle="tab" href="#departingTrainsTab">Lähtevät</a></li>
+            </ul>
+            <!-- Element that gathers both the incoming and departing trains -->
+            <div class="tab-content">
+               <!-- Element for incoming trains -->
+               <div id="incomingTrainsTab" class="tab-pane fade in active">
+                  <table class="table table-striped">
+                     <thead>
+                        <tr id="columns">
+                           <th>Juna</th>
+                           <th>Lähtöasema</th>
+                           <th>Pääteasema</th>
+                           <th>Saapuu</th>
+                        </tr>
+                     </thead>
+                     <tbody id="incomingTrainsElement"></tbody>
+                  </table>
+               </div>
+               <!-- Element for departing trains -->
+               <div id="departingTrainsTab" class="tab-pane fade">
+                  <table class="table table-striped">
+                     <thead>
+                        <tr id="columns">
+                           <th>Juna</th>
+                           <th>Lähtöasema</th>
+                           <th>Pääteasema</th>
+                           <th>Lähtee</th>
+                        </tr>
+                     </thead>
+                     <tbody id="departingTrainsElement"></tbody>
+                  </table>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <!-- jQuery -->
+   <script src="jquery/jquery-3.2.1.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.js"></script>
+   <!-- Javascript -->
+   <script src="js/script.js"></script>      
+   <!-- Bootstrap -->
+   <script src="js/bootstrap-3.3.7.js"></script>
+</body>  
+</html>
