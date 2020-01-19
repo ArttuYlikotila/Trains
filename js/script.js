@@ -22,13 +22,20 @@ const app = function () {
          if (stationsRequest.readyState == 4 && stationsRequest.status == 200) {
             // Parse the returned data to JSON-format
             stationNames = JSON.parse(stationsRequest.responseText);
-            // Go through all the stations and push the names of passenger stations to an array
+            // Go through all the stations, find the names of passenger stations, clean the names and push the names to an array
             for (var i = 0; i < stationNames.length; i++) {
                if (stationNames[i].passengerTraffic == true) {
                   var singleStation = stationNames[i].stationName;
-                  // TO-DO check if the remaining odd station names could be fixed
                   var pattern = /asema/i;
+                  // Remove word "asema" from all names
                   singleStation = singleStation.replace(pattern, "")
+
+                  // Remove extra letters from Russian stations
+                  if (singleStation.includes("_") == true) {
+                     var splitted = singleStation.split("_");
+                     singleStation = splitted[0];
+                  }
+
                   stationsArray.push(singleStation);
                   //console.log(singleStation);
                }
@@ -43,7 +50,7 @@ const app = function () {
    document.getElementById("page").onload = function() {requestStations()};
 
    // Function that requests data about trains, parses data to JSON and sorts JSON-data
-   function requestTrains(query, trainType, handleTrains) {
+   function requestTrains(query, trainType) {
       var request = new XMLHttpRequest();
       request.onreadystatechange = function() {
          // If the request for train data succeeds
@@ -54,7 +61,7 @@ const app = function () {
             sortTrainData(trainData, trainType);
             
             //console.log(trainData);
-            // Call a correct function to handle the train data
+            // Call a function to handle the train data
             handleTrains(trainType);
          }
       }
@@ -63,7 +70,7 @@ const app = function () {
    }
 
    // Function that sorts the JSON-data of trains according to their schedule
-   function sortTrainData (trainData, trainType) {
+   function sortTrainData(trainData, trainType) {
       trainData.sort(function(a, b){
          var timeA, timeB;
          
@@ -92,77 +99,49 @@ const app = function () {
    }
 
    // Function that extracts the wanted data from the JSON-data of incoming trains
-   function handleIncomingTrains(trainType) {
+   function handleTrains(trainType) {
       var category, trainName, timeTableLength, startingStationCode, finalStationCode, startingStationName, finalStationName, 
-      cancelled, scheduledTime, estimatedTime, differenceToSchedule;   
-      // Clear the page from previous trains
-      incomingTrainsElement.innerHTML = "";
+      cancelled, scheduledTime, estimatedTime, track;   
       
-      // Loop through the JSON-data to handle all the trains
-      for (var i = 0; i < trainData.length; i++) {
-         category = trainData[i].trainCategory;      
+      // Call a function to clear the correct HTML element of previous data
+      clearElement(trainType);
+      
+      // Loop through the JSON-data of trains to handle all the data
+      for (var i = 0; i < trainData.length; i++) {     
+         // Start extracting data
+         category = trainData[i].trainCategory; 
+         timeTableLength = trainData[i].timeTableRows.length;       
+         startingStationCode = trainData[i].timeTableRows[0].stationShortCode;
+         finalStationCode = trainData[i].timeTableRows[timeTableLength-1].stationShortCode;
+         cancelled = trainData[i].cancelled;
+
+         // Call a function to compose the name of the train
+         trainName = composeName(trainData, category, i);
+
+         // Call a function to find out the first and the final station of the train
+         [startingStationName, finalStationName] = findStations(startingStationCode, finalStationCode, trainType);
          
-         // Start extracting data if the category of the train is one of the possible passenger train categories
-         if (category == "Long-distance" || category == "Commuter") {
-            timeTableLength = trainData[i].timeTableRows.length;       
-            startingStationCode = trainData[i].timeTableRows[0].stationShortCode;
-            finalStationCode = trainData[i].timeTableRows[timeTableLength-1].stationShortCode;
-            cancelled = trainData[i].cancelled;
-            
-            if (startingStationCode != targetStation || startingStationCode == targetStation && finalStationCode == targetStation) {
-               // Call a function to compose the name of the train
-               trainName = composeName(trainData, category, i);
+         // Call a function to find out scheduled and estimated arrival time and if the train is on schedule
+         [scheduledTime, estimatedTime, differenceInMinutes, track] = findTimes(trainData, timeTableLength, i, trainType);
 
-               // Call a function to find out scheduled and estimated arrival time and if the train is on schedule
-               [scheduledTime, estimatedTime, differenceToSchedule] = findTimes (trainData, timeTableLength, i, trainType);
-               
-               // Call a function to find out the first and the final station of the train
-               [startingStationName, finalStationName] = findStations (trainData, timeTableLength, i);
-
-               // Call a function to create HTML element of the train to the web-page
-               createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, trainType, cancelled, differenceToSchedule);
-            }
-         }
+         // Call a function to create a HTML element of the train to the web-page
+         createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, track, trainType, cancelled, differenceInMinutes);
       }
    }
 
-   // Function that extracts the wanted data from the JSON-data of departing trains
-   function handleDepartingTrains(trainType) {
-      var category, trainName, timeTableLength, startingStationCode, finalStationCode, startingStationName, finalStationName,
-      cancelled, scheduledTime, estimatedTime, differenceToSchedule;
-      // Clear the page from previous trains
-      departingTrainsElement.innerHTML = "";
-
-      // Loop through the JSON-data to handle all the trains
-      for (var i = 0; i < trainData.length; i++) {
-         category = trainData[i].trainCategory;      
-
-         // Start extracting data if the train is a passenger train
-         if (category == "Long-distance" || category == "Commuter") {
-            timeTableLength = trainData[i].timeTableRows.length;       
-            startingStationCode = trainData[i].timeTableRows[0].stationShortCode;
-            finalStationCode = trainData[i].timeTableRows[timeTableLength-1].stationShortCode;
-            cancelled = trainData[i].cancelled;
-
-            if (finalStationCode != targetStation || startingStationCode == targetStation && finalStationCode == targetStation) {
-               // Call a function to compose the name of the train
-               trainName = composeName(trainData, category, i);
-               
-               // Call a function to find out scheduled and estimated departure time and if the train is on schedule
-               [scheduledTime, estimatedTime, differenceToSchedule] = findTimes (trainData, timeTableLength, i, trainType);
-
-               // Call a function to find out the first and the final station of the train
-               [startingStationName, finalStationName] = findStations (trainData, timeTableLength, i);
-
-               // Call a function to create HTML element of the train to the web-page
-               createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, trainType, cancelled, differenceToSchedule);
-            }
-         }
+   // Function that clears a HTML element depending on the type of the data
+   function clearElement(trainType) {
+      // Clear the page from previous trains based on the incoming data
+      if (trainType == "ARRIVAL") {
+         incomingTrainsElement.innerHTML = "";
+      }
+      else {
+         departingTrainsElement.innerHTML = "";
       }
    }
 
-   // Function to compose the name of a single train
-   function composeName (trainData, category, i) {
+   // Function that composes the name of a single train
+   function composeName(trainData, category, i) {
       // Compose name for the train depending on the category of the train
       if (category == "Commuter") {
          return trainName = "Lähijuna " + trainData[i].commuterLineID;
@@ -173,9 +152,10 @@ const app = function () {
    }
 
    // Function that searches and returns scheduled and estimated times of arrivals and departures and checks if the train is running in schedule
-   function findTimes (trainData, timeTableLength, i, trainType) {
-      var stationCode, scheduledTimeObject, estimatedTimeObject, scheduledTime, estimatedTime, differenceInMinutes, differenceToSchedule;
-      // Loop through the timetable of train to find scheduled time and estimated time
+   // TO-DO there are some anomalies in the data of the API regarding times, at least with trains running late, some workaround needed
+   function findTimes(trainData, timeTableLength, i, trainType) {
+      var stationCode, scheduledTimeObject, estimatedTimeObject, scheduledTime, estimatedTime, differenceInMinutes;
+      // Loop through the timetable of a single train to find scheduled time and estimated time
       for (var j = 0; j < timeTableLength; j++) {
          stationCode = trainData[i].timeTableRows[j].stationShortCode;
          // If the correct station is found, extract scheduled and estimated times and transform them to strings
@@ -188,78 +168,106 @@ const app = function () {
             // Check if the train is late, ahead or running in schedule
             differenceInMinutes = trainData[i].timeTableRows[j].differenceInMinutes;
 
-            if (differenceInMinutes > 0) {
-               differenceToSchedule = "late";
-            }
-            else if (differenceInMinutes < 0) {
-               differenceToSchedule = "ahead";
-            }
-            else {
-               differenceToSchedule = "onSchedule";
-            }
+            track = trainData[i].timeTableRows[j].commercialTrack;
 
-            return [scheduledTime, estimatedTime, differenceToSchedule];
+            return [scheduledTime, estimatedTime, differenceInMinutes, track];
          }
       }
    }
 
-   // Function to find out the first and the final station of a train
-   function findStations (trainData, timeTableLength, i) {
-      // Find the names of the first and last station of the train from the JSON-data of stations using UIC-code of the station
+   // Function that finds out the first and the final station of a train
+   function findStations(startingStationCode, finalStationCode, trainType) {
+      // Call a function to check if the train is going circular line and change the codes accordingly
+      [startingStationCode, finalStationCode] = findAirportLine(startingStationCode, finalStationCode, trainType);
+
+      // Find the names of the first and last station of the train from the JSON-data
       for (var j = 0; j < stationNames.length; j++) {
          // Find the first station of the train
-         if (trainData[i].timeTableRows[0].stationUICCode == stationNames[j].stationUICCode) {
+         if (startingStationCode == stationNames[j].stationShortCode) {
             var startingStationName = stationNames[j].stationName;
-            startingStationName = startingStationName.replace("asema", "");
+            if (startingStationCode != "LEN") {
+               startingStationName = startingStationName.replace(" asema", "");
+            }            
          }
          // Find the last station of the train
-         if (trainData[i].timeTableRows[timeTableLength-1].stationUICCode == stationNames[j].stationUICCode) {
+         if (finalStationCode == stationNames[j].stationShortCode) {
             var finalStationName = stationNames[j].stationName;
-            finalStationName = finalStationName.replace("asema", "");
+            if (finalStationCode != "LEN") {
+               finalStationName = finalStationName.replace(" asema", "");
+            }
          }
       }
       return [startingStationName, finalStationName];
    }
 
+   // Function that changes the station codes if the train is going circular line
+   function findAirportLine(startingStationCode, finalStationCode, trainType) {
+      // Change the appropriate station code if the train is the circular line going from Helsinki to Airport and back to Helsinki
+      if (startingStationCode == "HKI" && finalStationCode == "HKI") {
+         if (trainType == "ARRIVAL") {
+            startingStationCode = "LEN";
+         }
+         else {
+            finalStationCode = "LEN";
+         }
+      }
+      return [startingStationCode, finalStationCode];
+   }
+
    // Function that creates a new HTML element for the train
-   function createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, trainType, cancelled, differenceToSchedule) {
+   function createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, track, trainType, cancelled, differenceInMinutes) {
       var newElement = document.createElement("tr");
-      var trainHTML;
-      // TO-DO the information about the trains difference to schedule should be tested to be sure it works
-      // Create a HTML element for the train if the train is cancelled
-      if (cancelled == true) {
-         newElement.id = "cancelled";      
-         trainHTML = "<td>" + trainName + "</td>" +
-                     "<td>" + startingStationName + "</td>" +
-                     "<td>" + finalStationName + "</td>" + 
-                     "<td><div id='smaller'>" + scheduledTime + "</div>" +
-                     "<div id='red'>Peruttu</div></td>";
-      }
-      // If the train is running on schedule
-      else if (differenceToSchedule === "onSchedule") {         
-         trainHTML = "<td>" + trainName + "</td>" +
-                     "<td>" + startingStationName + "</td>" +
-                     "<td>" + finalStationName + "</td>" + 
-                     "<td>" + scheduledTime + "</td>";
-      }
-      // If the train is running late from the schedule
-      else if (differenceToSchedule === "late") {
-         trainHTML = "<td>" + trainName + "</td>" +
-                     "<td>" + startingStationName + "</td>" +
-                     "<td>" + finalStationName + "</td>" + 
-                     "<td><div id='red'>" + estimatedTime + "</div>" +
-                     "<div id='smaller'>(" + scheduledTime + ")</div></td>";
-      }
-      // If the train is running ahead of schedule
-      else if (differenceToSchedule === "ahead") {
-         trainHTML = "<td>" + trainName + "</td>" +
-                     "<td>" + startingStationName + "</td>" +
-                     "<td>" + finalStationName + "</td>" + 
-                     "<td><div id='faster'>" + estimatedTime + "</div>" +
-                     "<div id='smaller'>(" + scheduledTime + ")</div></td>";
-      }
+      var trainHTML, estimatedHTML;
+
+      // Pre-format variables for HTML element
+      trainHTML = "<td>" + trainName + "</td>" +
+                  "<td>" + startingStationName + "</td>" +
+                  "<td>" + finalStationName + "</td>"
+
+      // Call a function to add the schedule information of the train depending on trains status
+      trainHTML = addScheduleInformation(newElement, trainHTML, estimatedHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime)
+      
+      // Add track information of the train
+      trainHTML += "<td>" + track + "</td";
+
+      // Add content to the new HTML element
       newElement.innerHTML = trainHTML;
 
+      // Call a function to append the created new element to web-page
+      addElement(newElement, trainType);
+   }
+
+   // Function that adds schedule information to a single train depending on the status of the trains schedule
+   function addScheduleInformation(newElement, trainHTML, estimatedHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime) {
+      // Pre-format variable for HTML element
+      var scheduledHTML = "<div id='smaller'>(" + scheduledTime + ")</div>";
+      
+      // If the train is cancelled
+      if (cancelled == true) {
+         newElement.id = "cancelled";      
+         trainHTML += "<td><div id='smaller'>" + scheduledTime + "</div>" +
+                     "<div id='red'>Peruttu</div></td>";
+      }
+      // If the train is running late from the schedule
+      else if (differenceInMinutes > 0) {
+         estimatedHTML = "<div id='red'>" + estimatedTime + "</div>";
+         trainHTML += "<td>" + estimatedHTML + scheduledHTML + "</td>"         
+      }
+      // If the train is running ahead of schedule
+      else if (differenceInMinutes < 0) {
+         estimatedHTML = "<div id='faster'>" + estimatedTime + "</div>";
+         trainHTML += "<td>" + estimatedHTML + scheduledHTML + "</td>"
+      }
+      // If the train is running on schedule
+      else {         
+         trainHTML += "<td>" + scheduledTime + "</td>";
+      }
+
+      return trainHTML;
+   }
+
+   // Function to append a new train element to web-page
+   function addElement(newElement, trainType) {
       // Choose where to append the new element
       if (trainType === "ARRIVAL") {
          incomingTrainsElement.appendChild(newElement);
@@ -276,15 +284,15 @@ const app = function () {
       if (keycode == 13) {
          event.preventDefault();
          composeQuery();
-         requestTrains(incomingQuery, "ARRIVAL", handleIncomingTrains);
+         requestTrains(incomingQuery, "ARRIVAL");
          $('.nav-tabs a[href="#incomingTrainsTab"]').tab('show');
          document.getElementById("searchField").blur();
       }
    });
-
+   
    // Listener that starts the request and handling for departing trains when link is clicked
    document.getElementById("loadDeparting").addEventListener('click', function() {
-      requestTrains(departingQuery, "DEPARTURE", handleDepartingTrains);
+      requestTrains(departingQuery, "DEPARTURE");
    })
 
    // Autocomplete for search
@@ -302,7 +310,7 @@ const app = function () {
          select: function(event, ui) {
             $("#searchField").val(ui.item.label);
             composeQuery();
-            requestTrains(incomingQuery, "ARRIVAL", handleIncomingTrains);
+            requestTrains(incomingQuery, "ARRIVAL");
             $('.nav-tabs a[href="#incomingTrainsTab"]').tab('show');
             document.activeElement.blur();
             $("#searchField").blur();
@@ -340,7 +348,7 @@ const app = function () {
          amountOfTrains = 30;
       }
       // Compose the final queries
-      incomingQuery =  queryStart + targetStation + "?arriving_trains=" + amountOfTrains + "&arrived_trains=0&departing_trains=0&departed_trains=0";
-      departingQuery = queryStart + targetStation + "?arriving_trains=0&arrived_trains=0&departing_trains=" + amountOfTrains +"&departed_trains=0";
+      incomingQuery =  queryStart + targetStation + "?arriving_trains=" + amountOfTrains + "&arrived_trains=0&departing_trains=0&departed_trains=0&train_categories=Commuter,Long-Distance";
+      departingQuery = queryStart + targetStation + "?arriving_trains=0&arrived_trains=0&departing_trains=" + amountOfTrains + "&departed_trains=0&train_categories=Commuter,Long-Distance";
    }
 }();
