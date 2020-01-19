@@ -26,15 +26,8 @@ const app = function () {
             for (var i = 0; i < stationNames.length; i++) {
                if (stationNames[i].passengerTraffic == true) {
                   var singleStation = stationNames[i].stationName;
-                  var pattern = /asema/i;
-                  // Remove word "asema" from all names
-                  singleStation = singleStation.replace(pattern, "")
-
-                  // Remove extra letters from Russian stations
-                  if (singleStation.includes("_") == true) {
-                     var splitted = singleStation.split("_");
-                     singleStation = splitted[0];
-                  }
+                  // Call a function to clean the station name
+                  singleStation = removeChars(singleStation);
 
                   stationsArray.push(singleStation);
                   //console.log(singleStation);
@@ -46,10 +39,24 @@ const app = function () {
       stationsRequest.send();
    }
 
+   // Function that removes unwanted names and chars from the station names
+   function removeChars(station) {
+      // Remove word "asema" from all names
+      station = station.replace(" asema", "");
+
+      // Remove extra letters from Russian stations
+      if (station.includes("_") == true) {
+         var splitted = station.split("_");
+         station = splitted[0];
+      }
+      
+      return station;
+   }
+
    // Request names of all the stations when the page is loaded
    document.getElementById("page").onload = function() {requestStations()};
 
-   // Function that requests data about trains, parses data to JSON and sorts JSON-data
+   // Function that requests data about trains, parses data to JSON and sorts the JSON-data
    function requestTrains(query, trainType) {
       var request = new XMLHttpRequest();
       request.onreadystatechange = function() {
@@ -57,7 +64,7 @@ const app = function () {
          if (request.readyState == 4 && request.status == 200) {
             // Parse the responseText of request to JSON 
             trainData = JSON.parse(request.responseText);
-            // Call a function to sort the JSON-data of the trains by the scheduled times
+            // Call a function to sort the JSON-data of the trains according to the scheduled times
             sortTrainData(trainData, trainType);
             
             //console.log(trainData);
@@ -152,7 +159,7 @@ const app = function () {
    }
 
    // Function that searches and returns scheduled and estimated times of arrivals and departures and checks if the train is running in schedule
-   // TO-DO there are some anomalies in the data of the API regarding times, at least with trains running late, some workaround needed
+   // TO-DO there are some anomalies in the data of the API regarding times, at least with trains running late, some workaround possibly needed
    function findTimes(trainData, timeTableLength, i, trainType) {
       var stationCode, scheduledTimeObject, estimatedTimeObject, scheduledTime, estimatedTime, differenceInMinutes;
       // Loop through the timetable of a single train to find scheduled time and estimated time
@@ -165,9 +172,9 @@ const app = function () {
             scheduledTime = scheduledTimeObject.toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: false});
             estimatedTime = estimatedTimeObject.toLocaleTimeString("en-US", {hour: "2-digit", minute: "2-digit", hour12: false});
             
-            // Check if the train is late, ahead or running in schedule
+            // Retrieve data that tells if the train is on schedule or not
             differenceInMinutes = trainData[i].timeTableRows[j].differenceInMinutes;
-
+            // Retrieve the data about the track reserved for the train in the station
             track = trainData[i].timeTableRows[j].commercialTrack;
 
             return [scheduledTime, estimatedTime, differenceInMinutes, track];
@@ -175,25 +182,27 @@ const app = function () {
       }
    }
 
-   // Function that finds out the first and the final station of a train
+   // Function that finds out the names of first and the final station of a train
    function findStations(startingStationCode, finalStationCode, trainType) {
       // Call a function to check if the train is going circular line and change the codes accordingly
       [startingStationCode, finalStationCode] = findAirportLine(startingStationCode, finalStationCode, trainType);
 
       // Find the names of the first and last station of the train from the JSON-data
       for (var j = 0; j < stationNames.length; j++) {
-         // Find the first station of the train
+         // Find the name of the first station of the train
          if (startingStationCode == stationNames[j].stationShortCode) {
             var startingStationName = stationNames[j].stationName;
             if (startingStationCode != "LEN") {
-               startingStationName = startingStationName.replace(" asema", "");
+               // Call a function to clean the stations name
+               startingStationName = removeChars(startingStationName);
             }            
          }
-         // Find the last station of the train
+         // Find the the name of the last station of the train
          if (finalStationCode == stationNames[j].stationShortCode) {
             var finalStationName = stationNames[j].stationName;
             if (finalStationCode != "LEN") {
-               finalStationName = finalStationName.replace(" asema", "");
+               // Call a function to clean the stations name
+               finalStationName = removeChars(finalStationName);
             }
          }
       }
@@ -217,15 +226,15 @@ const app = function () {
    // Function that creates a new HTML element for the train
    function createTrainElement(trainName, startingStationName, finalStationName, scheduledTime, estimatedTime, track, trainType, cancelled, differenceInMinutes) {
       var newElement = document.createElement("tr");
-      var trainHTML, estimatedHTML;
+      var trainHTML;
 
-      // Pre-format variables for HTML element
+      // Pre-format variable for HTML element
       trainHTML = "<td>" + trainName + "</td>" +
                   "<td>" + startingStationName + "</td>" +
                   "<td>" + finalStationName + "</td>"
 
       // Call a function to add the schedule information of the train depending on trains status
-      trainHTML = addScheduleInformation(newElement, trainHTML, estimatedHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime)
+      trainHTML = addScheduleInformation(newElement, trainHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime)
       
       // Add track information of the train
       trainHTML += "<td>" + track + "</td";
@@ -233,14 +242,15 @@ const app = function () {
       // Add content to the new HTML element
       newElement.innerHTML = trainHTML;
 
-      // Call a function to append the created new element to web-page
+      // Call a function to append the created new element to the web-page
       addElement(newElement, trainType);
    }
 
    // Function that adds schedule information to a single train depending on the status of the trains schedule
-   function addScheduleInformation(newElement, trainHTML, estimatedHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime) {
+   function addScheduleInformation(newElement, trainHTML, cancelled, differenceInMinutes, scheduledTime, estimatedTime) {
       // Pre-format variable for HTML element
       var scheduledHTML = "<div id='smaller'>(" + scheduledTime + ")</div>";
+      var estimatedHTML;
       
       // If the train is cancelled
       if (cancelled == true) {
@@ -266,9 +276,9 @@ const app = function () {
       return trainHTML;
    }
 
-   // Function to append a new train element to web-page
+   // Function that appends a new train element to the web-page
    function addElement(newElement, trainType) {
-      // Choose where to append the new element
+      // Choose the parent element where to append the new element
       if (trainType === "ARRIVAL") {
          incomingTrainsElement.appendChild(newElement);
       }
@@ -277,7 +287,7 @@ const app = function () {
       }
    }
 
-   // Start search if the user presses enter
+   // Start the search if the user presses enter
    $(document).keypress(function(e) {
       var keycode = (e.keycode ? e.keycode : e.which);
       
