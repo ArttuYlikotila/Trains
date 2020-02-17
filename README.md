@@ -1,5 +1,5 @@
 # Trains
-This is a small web app for browsing train schedules for a chosen train station in Finland.
+This is a small single-page web app for browsing train schedules for a user chosen train station in Finland.
 
 User enters the name of the train station and the app shows the planned train schedules and live-estimates of the schedule
 for trains that are not running in planned schedule.
@@ -14,6 +14,6 @@ App is responsive and can be used with both mobile and desktop devices.
 https://arttuylikotila.github.io/trains/
 
 ## Installation
-- Clone or download all the files and folders.
+- Clone or download all the files and folders of the project.
 
 - Open the index.html in your favorite web browser.
