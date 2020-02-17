@@ -8,7 +8,7 @@ This app is mainly done with basic JavaScript with a little bit of jQuery thrown
 
 Style and layout is done with basic CSS and Bootstrap.
 
-App is responsive and can be used both with mobile and desktop devices.
+App is responsive and can be used with both mobile and desktop devices.
 
 ## Link to app
 https://arttuylikotila.github.io/trains/
