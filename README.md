@@ -10,6 +10,8 @@ Style and layout is done with basic CSS and Bootstrap.
 
 App is responsive and can be used with both mobile and desktop devices.
 
+UI for the app is only in Finnish.
+
 ## Link to app
 https://arttuylikotila.github.io/trains/
 
