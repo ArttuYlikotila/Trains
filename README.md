@@ -2,7 +2,7 @@
 This is a small single-page web app for browsing train schedules for a user chosen train station in Finland.
 
 User enters the name of the train station and the app shows the planned train schedules and live-estimates of the schedule
-for trains that are not running in planned schedule.
+of trains that are not running in planned schedule for the chosen station.
 
 This app is mainly done with basic JavaScript with a little bit of jQuery thrown in.
 
